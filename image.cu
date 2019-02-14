@@ -1,8 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-//#include <string.h>
 #include <math.h>
-#include <ctype.h>
 #define PI 3.141592
 
 void write_file(char* filename, int size, float* image){
@@ -28,7 +26,6 @@ struct Myimage
 };
 
 __host__ Myimage read_file(char* filename){
-	
 	
 	FILE* file = fopen(filename, "r");
 	char* n;
@@ -105,7 +102,6 @@ __global__ void Filtre_bilateral(int N, int s, float* S, float* w, float* w_r){
 		int x2 = i%N;
 		for (y1=x1-s; y1<x1+s; y1++){
 			for (y2=x2-s; y2<x2+s; y2++){
-				// check if in the support of Wr ???!!
 				sum1 += S[abs(y1*N+y2)]*w[(x1-y1)^2 + (x2-y2)^2]*w_r[(int)abs(S[i]-S[y1*N+y2])]; 
 				sum2 += w[(x1-y1)^2 + (x2-y2)^2]*w_r[(int)abs(S[i]-S[y1*N+y2])];
 			}
@@ -118,7 +114,7 @@ __global__ void Filtre_bilateral(int N, int s, float* S, float* w, float* w_r){
 int main(int argc, char *argv[]){
 	
 	int s = atoi(argv[1]);
-	int r = 25;
+	int r = (argc==6)? atoi(argv[5]): 25;
 	char* kernel = argv[2];
 	char* input_image = argv[3];
 	char* output_image = argv[4];
@@ -147,7 +143,6 @@ int main(int argc, char *argv[]){
 			kernel_boite(s, w_cpu);
 	}else if(strcmp(kernel, "bl")==0){
 		int numFilter_bl = 256*sizeof(float);
-		//float* w_r_cpu= (float*) calloc(256, sizeof(float));
 		float w_r_cpu[256];
 		float w_r_GPU[256];
 		
