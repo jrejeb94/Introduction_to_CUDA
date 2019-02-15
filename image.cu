@@ -49,23 +49,22 @@ __host__ Myimage read_file(char* filename){
 }
 
 __host__  void kernel_gauss(int s, float* w){	
-	int y;
-	for (y=0; y<s; y++){
+	
+	for (int y=0; y<s; y++){
 		w[y] = 1/(s*sqrt(2*PI))*exp(-y/(2*(s^2)));
 	}
 }
 
 __host__  void kernel_boite(int s, float* w){	
-	int y;
-	for (y=0; y<s; y++){
+
+	for (int y=0; y<s; y++){
 		w[y] = 1;
 	}
 }
 
 __host__  void kernel_bilateral(int r, float* w){
 	
-	int y;
-	for (y=0; y<256; y++){
+	for (int y=0; y<256; y++){
 		w[y] = 1/(r*sqrt(2*PI))*exp(-(y^2)/(2*(r^2)));
 	}
 }
@@ -146,13 +145,14 @@ int main(int argc, char *argv[]){
 		float w_r_cpu[256];
 		float w_r_GPU[256];
 		
-		kernel_boite(s, w_cpu);
+		kernel_gauss(s, w_cpu);
 		kernel_bilateral(r, w_r_cpu);
 
 		cudaMalloc((void**)&w_GPU, numFilter);
 		cudaMemcpy(w_GPU, w_cpu, numFilter, cudaMemcpyHostToDevice);
 		cudaMalloc((void**)&w_r_GPU, numFilter_bl);
 		cudaMemcpy(w_r_GPU, w_r_cpu, numFilter_bl, cudaMemcpyHostToDevice);
+		
 		int nblocks = (N + 255)/256;
 		Filtre_bilateral<<<nblocks,256>>>(N, s, S_GPU, w_GPU, w_r_GPU);
 		cudaMemcpy(S_cpu, S_GPU, numBytes, cudaMemcpyDeviceToHost);
