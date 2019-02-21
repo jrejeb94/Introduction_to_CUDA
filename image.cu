@@ -89,6 +89,42 @@ __global__ void Filtre(int N, int s, float* S, float* w){
 	}	 
 }
 
+__global__ void filtre_dilat(int N, int s, float* S){
+	
+	int i = blockIdx.x * blockDim.x + threadIdx.x;
+	int tmp = S[i];
+	if (i<N){
+		
+		int y1;
+		int y2;
+		int x1 = i/(N+1);
+		int x2 = i%N;
+		for (y1=x1-s; y1<x1+s; y1++){
+			for (y2=x2-s; y2<x2+s; y2++){
+				tmp = max(tmp ,(int)S[abs(y1*N+y2)]);
+			}
+		}
+		S[i] = tmp;
+	}	 
+}
+__global__ void filtre_erosion(int N, int s, float* S){
+	
+	int i = blockIdx.x * blockDim.x + threadIdx.x;
+	int tmp = S[i];
+	if (i<N){
+		
+		int y1;
+		int y2;
+		int x1 = i/(N+1);
+		int x2 = i%N;
+		for (y1=x1-s; y1<x1+s; y1++){
+			for (y2=x2-s; y2<x2+s; y2++){
+				tmp = min(tmp ,(int)S[abs(y1*N+y2)]);
+			}
+		}
+		S[i] = tmp;
+	}	 
+}
 __global__ void Filtre_bilateral(int N, int s, float* S, float* w, float* w_r){	
 	int i = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -155,6 +191,24 @@ int main(int argc, char *argv[]){
 		
 		int nblocks = (N + 255)/256;
 		Filtre_bilateral<<<nblocks,256>>>(N, s, S_GPU, w_GPU, w_r_GPU);
+		cudaMemcpy(S_cpu, S_GPU, numBytes, cudaMemcpyDeviceToHost);
+
+		write_file(output_image, N, S_cpu);
+		
+		return 0;
+	}else if(strcmp(kernel, "e")==0){
+		
+		int nblocks = (N + 255)/256;
+		filtre_erosion<<<nblocks,256>>>(N, s, S_GPU);
+		cudaMemcpy(S_cpu, S_GPU, numBytes, cudaMemcpyDeviceToHost);
+
+		write_file(output_image, N, S_cpu);
+		
+		return 0;
+	}else if(strcmp(kernel, "d")==0){
+		
+		int nblocks = (N + 255)/256;
+		filtre_dilat<<<nblocks,256>>>(N, s, S_GPU);
 		cudaMemcpy(S_cpu, S_GPU, numBytes, cudaMemcpyDeviceToHost);
 
 		write_file(output_image, N, S_cpu);
